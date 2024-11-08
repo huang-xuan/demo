@@ -1,0 +1,94 @@
+dataSources:
+  ds0:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://localhost:3306/demo_ds?serverTimezone=UTC&useSSL=false&useUnicode=true&characterEncoding=UTF-8
+    username: root
+    password: admin123
+    poolName: test0
+    minPoolSize: 2
+    maxPoolSize: 20
+  ds1:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://localhost:3306/demo_ds_0?serverTimezone=UTC&useSSL=false&useUnicode=true&characterEncoding=UTF-8
+    username: root
+    password: admin123
+    poolName: test1
+    minPoolSize: 5
+    maxPoolSize: 20
+  ds2:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://localhost:3306/demo_ds_1?serverTimezone=UTC&useSSL=false&useUnicode=true&characterEncoding=UTF-8
+    username: root
+    password: admin123
+    poolName: test2
+    minPoolSize: 5
+    maxPoolSize: 20
+rules:
+  #  - !SINGLE
+  #    tables:
+  #      - "*.order_*"
+  - !READWRITE_SPLITTING
+    dataSources:
+      readwrite_ds:
+        writeDataSourceName: ds0
+        readDataSourceNames:
+          - ds1
+          - ds2
+        loadBalancerName: ROUND_ROBIN
+    loadBalancers:
+      ROUND_ROBIN:
+        type: ROUND_ROBIN
+  - !SHARDING
+    #    autoTables:
+    #      order:
+    #        actualDataSources: ds1,ds2
+    #        shardingStrategy:
+    #          standard:
+    #            shardingColumn: order_id
+    #            shardingAlgorithmName: auto_mod
+    tables:
+      order:
+        actualDataNodes: readwrite_ds.order_${0..1}
+        tableStrategy:
+          standard:
+            shardingColumn: order_id
+            shardingAlgorithmName: order_inline
+    #          complex:
+    #            shardingColumns: customer_id,order_id
+    #            shardingAlgorithmName: customer
+    defaultTableStrategy:
+      none:
+    shardingAlgorithms:
+      auto_mod:
+        type: MOD
+        props:
+          sharding-count: 2
+      order_inline:
+        type: INLINE
+        props:
+          algorithm-expression: order_${order_id % 2}
+      customer:
+        type: CLASS_BASED
+        props:
+          strategy: COMPLEX
+          algorithmClassName: com.example.shardingsphere.service.CustomerShardingAlgorithm
+  - !MASK
+    tables:
+      order:
+        columns:
+          delivery_address:
+            maskAlgorithm: keep_first_n_last_m_mask
+
+    maskAlgorithms:
+      keep_first_n_last_m_mask:
+        type: KEEP_FIRST_N_LAST_M
+        props:
+          first-n: 1
+          last-m: 2
+          replace-char: '*'
+props:
+  sql-show: true
+#  sql-simple: true

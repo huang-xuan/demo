@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
+    url: jdbc:shardingsphere:classpath:sharding.yml
+    hikari:
+      pool-name: hikariPool
+      minimum-idle: 10
+      maximum-pool-size: 20
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: none
+      show-sql: true
+#logging:
+#  level:
+#    com:
+#      zaxxer:
+#        hikari:
+#          HikariConfig: DEBUG
